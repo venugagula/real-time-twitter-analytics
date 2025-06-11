@@ -21,5 +21,8 @@ A real-time streaming pipeline that ingests live tweets (5,000+/min) using Azure
 2. Run Spark job in Databricks
 3. Connect Power BI to Cosmos DB
 
+## Architecture
+![image](https://github.com/user-attachments/assets/a7c1800f-a4f1-426a-a1bc-ad733b1f5caa)
+
 ## Author
 Venugopal Reddy Gangula
