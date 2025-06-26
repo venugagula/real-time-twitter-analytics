@@ -1,50 +1,37 @@
-# Real-Time Twitter Analytics Pipeline
+# Real-Time Twitter Data Pipeline with Analytics
 
-## Overview
-A real-time streaming pipeline that ingests live tweets (5,000+/min) using Azure Event Hubs and Spark Structured Streaming. Performs sentiment analysis and visualizes hashtag trends and geolocation sentiment using Power BI.
+![Pipeline Architecture](https://github.com/user-attachments/assets/a7c1800f-a4f1-426a-a1bc-ad733b1f5caa)
 
-## Tech Stack
-- Azure Event Hubs
-- Azure Databricks
-- Spark Structured Streaming
-- Cosmos DB
-- TextBlob / NLTK
-- Power BI
+## 📌 Overview
+A production-grade streaming pipeline that processes **5,000+ tweets/minute** with:
+- Real-time ingestion from Twitter API
+- Kafka/Event Hubs for fault-tolerant buffering
+- Spark Structured Streaming for transformations
+- MongoDB/Cosmos DB for flexible storage
+- Sentiment analysis and Power BI visualization
 
-## Key Features
-- Streaming tweet ingestion & transformation
-- Sentiment classification (Positive, Neutral, Negative)
-- Live dashboards with trending hashtags and sentiment maps
+## 🛠 Tech Stack
+| Component           | Options                          |
+|---------------------|----------------------------------|
+| **Streaming**       | Kafka / [Azure Event Hubs](https://azure.microsoft.com/en-us/products/event-hubs/) |
+| **Processing**      | [Spark Structured Streaming](https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html) (Local or [Azure Databricks](https://azure.microsoft.com/en-us/products/databricks/)) |
+| **Storage**         | [MongoDB](https://www.mongodb.com/) / [Azure Cosmos DB](https://azure.microsoft.com/en-us/products/cosmos-db/) |
+| **Analytics**       | [TextBlob](https://textblob.readthedocs.io/) / [NLTK](https://www.nltk.org/) |
+| **Visualization**   | [Power BI](https://powerbi.microsoft.com/) / [MongoDB Charts](https://www.mongodb.com/products/charts) |
 
-## How to Run
-1. Set up Event Hubs and Cosmos DB
-2. Run Spark job in Databricks
-3. Connect Power BI to Cosmos DB
+## ✨ Key Features
+- **Real-time Processing**  
+  - Filters tweets by keywords/language
+  - Handles 5,000+ tweets/minute with auto-scaling
 
-## Architecture
-![image](https://github.com/user-attachments/assets/a7c1800f-a4f1-426a-a1bc-ad733b1f5caa)
-
-# Twitter API Credentials
-TWITTER_CONSUMER_KEY=your_consumer_key
-TWITTER_CONSUMER_SECRET=your_consumer_secret
-TWITTER_ACCESS_TOKEN=your_access_token
-TWITTER_ACCESS_TOKEN_SECRET=your_access_token_secret
-
-# Kafka Configuration
-KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-KAFKA_TOPIC=twitter-stream
-
-# Spark Configuration
-SPARK_MASTER_URL=spark://spark-master:7077
-
-# MongoDB Configuration
-MONGO_CONNECTION_STRING=mongodb://mongo:27017
-MONGO_DATABASE=twitter
-MONGO_COLLECTION=tweets
-
-# Tweet Filters
-TWEET_KEYWORDS=Scala,Apache,Spark,Kafka,Data,AI,BigData
-TWEET_LANGUAGES=en
-
+- **Sentiment Analysis**  
+  ```python
+  from textblob import TextBlob
+  def analyze(text):
+      analysis = TextBlob(text)
+      return {
+          'polarity': analysis.sentiment.polarity,
+          'sentiment': 'positive' if analysis.sentiment.polarity > 0 else 'negative' if analysis.sentiment.polarity < 0 else 'neutral'
+      }
 ## Author
 Venugopal Reddy Gangula
