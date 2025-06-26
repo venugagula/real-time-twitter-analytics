@@ -1,20 +1,8 @@
-version: '3'
+version: '3.8'
 
-# https://docs.docker.com/compose/compose-file/
-
-# Notes:
-
-# EXPOSE is used to expose ports without publishing them to the host machine — 
-# they’ll only be accessible to linked services on the same network.
-# The EXPOSE instruction does not actually publish the port. 
-# It functions as a type of documentation between the person who builds the image and the person who runs the container, about which ports are intended to be published.
-
-# PORTS is used to publish ports to a host. 
-# You can either use a short syntax, or give a more detailed configuration.
-# Either specify both ports (HOST:CONTAINER), or just the container port (an random, temporory host port is chosen).
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.0.1
+    image: confluentinc/cp-zookeeper:7.3.0
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -22,11 +10,12 @@ services:
       - "2181:2181"
 
   kafka:
-    image: confluentinc/cp-kafka:7.0.1
+    image: confluentinc/cp-kafka:7.3.0
     depends_on:
       - zookeeper
     ports:
       - "9092:9092"
+      - "29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -34,25 +23,28 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    volumes:
-      - ./kafka/create-topics.sh:/usr/bin/create-topics.sh
-    command: "bash -c 'cub kafka-ready -b kafka:9092 1 60 && create-topics.sh && tail -f /dev/null'"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
 
   twitter-producer:
-    build: ./twitter-producer
+    build:
+      context: ./twitter-producer
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+      KAFKA_TOPIC: "twitter-stream"
+      TWITTER_CONSUMER_KEY: ${TWITTER_CONSUMER_KEY}
+      TWITTER_CONSUMER_SECRET: ${TWITTER_CONSUMER_SECRET}
+      TWITTER_ACCESS_TOKEN: ${TWITTER_ACCESS_TOKEN}
+      TWITTER_ACCESS_TOKEN_SECRET: ${TWITTER_ACCESS_TOKEN_SECRET}
+      TWEET_KEYWORDS: "Scala,Apache,Spark,Kafka,Data,AI,BigData"
+      TWEET_LANGUAGES: "en"
     depends_on:
       - kafka
-    environment:
-      KAFKA_BROKER: kafka:9092
-      TWITTER_TOPIC: raw-tweets
-    restart: unless-stopped
 
   spark-master:
-    image: bitnami/spark:3.3.0
-    command: >
-      bash -c "/opt/bitnami/scripts/spark/run.sh && tail -f /dev/null"
+    image: bitnami/spark:3.3.1
     ports:
       - "8080:8080"
+      - "7077:7077"
     environment:
       - SPARK_MODE=master
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
@@ -61,54 +53,17 @@ services:
       - SPARK_SSL_ENABLED=no
 
   spark-worker:
-    image: bitnami/spark:3.3.0
+    image: bitnami/spark:3.3.1
     depends_on:
       - spark-master
-    command: >
-      bash -c "/opt/bitnami/scripts/spark/run.sh && tail -f /dev/null"
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark-master:7077
-      - SPARK_WORKER_MEMORY=1G
-      - SPARK_WORKER_CORES=1
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=2
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
       - SPARK_RPC_ENCRYPTION_ENABLED=no
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
 
-  spark-submit:
-    build: ./spark-processor
-    depends_on:
-      - spark-master
-      - kafka
-      - mongo
-    environment:
-      SPARK_MASTER_URL: spark://spark-master:7077
-      KAFKA_BROKER: kafka:9092
-      MONGO_URI: mongodb://mongo:27017/twitter.tweets
-
-  mongo:
-    image: mongo:5.0
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
-      - ./mongodb/init.js:/docker-entrypoint-initdb.d/init.js:ro
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin
-
-volumes:
-  mongodb_data:
-
-
-
-
-
-
-
-
-
-
-
-
+  spark-submit
